@@ -1,0 +1,61 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Description" : "cloudmasters first template",
+
+ "Resources":{
+     "VPCA":{
+        "Type" : "AWS::EC2::VPC",
+        "Properties" : {
+            "CidrBlock" : "10.0.0.0/16",
+            "Tags" : [ {"Key": "Name", "Value": "sunflower-vpc"} ]
+          } 
+      },
+
+      "subnet1":{
+        "Type" : "AWS::EC2::Subnet",
+        "Properties" : {
+
+           "VpcId" : { "Ref" : "VPCA" },
+           "CidrBlock" : "10.0.1.0/24",
+           "AvailabilityZone" : "us-east-1a",
+            "MapPublicIpOnLaunch" : "True",
+           "Tags" : [ { "Key" : "Name", "Value" : "public-subnet1" } ]
+        }
+    },
+
+        "subnet2":{
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+    
+               "VpcId" : { "Ref" : "VPCA" },
+               "CidrBlock" : "10.0.2.0/24",
+               "AvailabilityZone" : "us-east-1b",
+                "MapPublicIpOnLaunch" : "True",
+             "Tags" : [ { "Key" : "Name", "Value" : "public-subnet2"} ]
+            }
+        },
+
+        "subnet3":{
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+    
+               "VpcId" : { "Ref" : "VPCA" },
+               "CidrBlock" : "10.0.3.0/24",
+               "AvailabilityZone" : "us-east-1a",
+                "MapPublicIpOnLaunch" : "True",
+             "Tags" : [ { "Key" : "Name", "Value" : "private-subnet1"} ]
+            }
+        },
+
+        "subnet4":{
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+    
+               "VpcId" : { "Ref" : "VPCA" },
+               "CidrBlock" : "10.0.4.0/24",
+               "AvailabilityZone" : "us-east-1b",
+                "MapPublicIpOnLaunch" : "True",
+             "Tags" : [ { "Key" : "Name", "Value" : "private-subnet2"} ]
+            }
+        },
+  
