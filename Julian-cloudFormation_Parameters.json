@@ -24,15 +24,51 @@
             "Default" : "subnet-2",
             "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
             "Description" : "Enter your subnet name"
-         },
+        },
 
     "IgwName" : {
             "Type" : "String",
             "Default" : "enter gateway name",
             "Description" : "Enter your internet gateway name"
-         }
+        },
 
+    "InstanceType" : {
+            "Type" : "String",
+            "Default" : "t2.micro",
+            "AllowedValues" : [ "t2.small","t2.medium", 
+                                "t2.xlarge","t2.large", 
+                                "t2.2xlarge","m3.medium" ],                   
+            "Description" : "Enter your EC2 instance type"
+        },
+    
+    "ImageId" : {
+           "Type" : "String",
+           "Default" : "ami-0e341fcaad89c3650",
+           "AllowedValues" : [ "ami-00d1ab6b335f217cf",
+                               "ami-0ba6d33ccf9c1d893",
+                               "ami-0e341fcaad89c3650" ],                   
+            "Description" : "Select your Amazon Machine Image"
+        },
+
+        "InstanceName" : {
+            "Type" : "String",
+            "Default" : "enter instance name",
+            "Description" : "Enter your EC2 Instance name"
+        },
+
+        "SecGroupName" : {
+            "Type" : "String",
+            "Default" : "enter security group name",
+            "Description" : "Enter your EC2 Security group name"
+        },
+
+        "KeyName" : {
+            "Type" : "String",
+            "Default" : "enter Key pair name",
+            "Description" : "Enter your EC2 Key pair name"
+        }
     },
+
 
     "Resources" :{
 
@@ -119,8 +155,41 @@
            "DestinationCidrBlock" : "0.0.0.0/0",
            "GatewayId" : {"Ref" : "Igw" }
         }
-    }
-    
+    },
+
+    "Ec2A":{
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+            "ImageId" : {"Ref": "ImageId" },
+            "InstanceType" : {"Ref": "InstanceType"},
+            "KeyName" : {"Ref": "KeyName"},
+            "SecurityGroupIds" : [{"Ref": "EC2SecGroup"}],
+            "SubnetId" : {"Ref": "sub1"},
+            "Tags" : [ {"Key" : "Name", "Value": {"Ref" : "InstanceName" } } ]
+         
         }
-    }    
+    },
+
+    "EC2SecGroup":{
+            "Type" : "AWS::EC2:SecurityGroup",
+            "Properties":{
+            "GroupDescription": "Security Group for EC2",
+            "SecurityGroupEgress": [{
+            "IpProtocol" : "-1",
+            "CidrIp" : "0.0.0.0/0"
+        }],  
+            "SecucurityGroupIngress": [{
+            "IpProtocol" : "tcp",
+            "FromPort" : 3389,
+            "ToPort" : 80,
+            "CidrIp" : "0.0.0.0/0"
+        }],
+            "Tags": [ {"Key" : "Name", "Value": {"Ref" : "SecGroupName" } } ] ,
+            "VpcId": {"Ref":"VPCJ"}
+
+        }
+      }  
+ 
+    }
+}    
    
