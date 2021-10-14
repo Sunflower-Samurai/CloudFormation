@@ -37,7 +37,7 @@
             "Default" : "t2.micro",
             "AllowedValues" : [ "t2.small","t2.medium", 
                                 "t2.xlarge","t2.large", 
-                                "t2.2xlarge","m3.medium" ],                   
+                                "t2.2xlarge","t2.micro" ],                   
             "Description" : "Enter your EC2 instance type"
         },
     
@@ -171,7 +171,7 @@
     },
 
     "EC2SecGroup":{
-            "Type" : "AWS::EC2:SecurityGroup",
+            "Type" : "AWS::EC2::SecurityGroup",
             "Properties":{
             "GroupDescription": "Security Group for EC2",
             "SecurityGroupEgress": [{
