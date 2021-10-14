@@ -1,0 +1,126 @@
+{
+
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : " Julian-Cloudmasters-first-template",
+
+
+    "Parameters" : {
+
+    "VpcName" : {
+          "Type" : "String",
+          "Default" : "enter vpc name",
+          "Description" : "Enter your VPC name"
+        },
+
+    "SubnetName" : {
+           "Type" : "String",
+           "Default" : "subnet-1",
+           "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+           "Description" : "Enter your subnet name"
+        },
+          
+    "SecondarySubnetName" : {
+            "Type" : "String",
+            "Default" : "subnet-2",
+            "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+            "Description" : "Enter your subnet name"
+         },
+
+    "IgwName" : {
+            "Type" : "String",
+            "Default" : "enter gateway name",
+            "Description" : "Enter your internet gateway name"
+         }
+
+    },
+
+    "Resources" :{
+
+    "VPCJ" : {
+        "Type" : "AWS::EC2::VPC",    
+        "Properties" : {
+        "CidrBlock" : "10.0.0.0/16",
+        "Tags" : [ {"Key": "Name" , "Value": {"Ref" : "VpcName"} } ]
+        }
+    },
+
+    "sub1" : {
+        "Type" : "AWS::EC2::Subnet",   
+        "Properties" :{
+        "VpcId": {"Ref" : "VPCJ"},
+        "CidrBlock" : "10.0.1.0/24",
+        "AvailabilityZone" : "us-east-1a",
+        "MapPublicIpOnLaunch" : "True",
+        "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SubnetName"} } ]
+        }
+    },
+
+    "sub2" : {
+         "Type" : "AWS::EC2::Subnet",    
+         "Properties" :{
+         "VpcId" : {"Ref" : "VPCJ"},
+         "CidrBlock" : "10.0.2.0/24",
+         "AvailabilityZone" : "us-east-1b",
+         "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SecondarySubnetName"} } ]
+        }
+    },
+
+    "Igw" :{
+          "Type" : "AWS::EC2::InternetGateway",    
+          "Properties" :{
+            "Tags": [ {"Key": "Name" , "Value": {"Ref" : "IgwName"} } ]
+        }
+    },
+
+    "AttachGateway" : {
+          "Type" : "AWS::EC2::VPCGatewayAttachment",
+          "Properties" : {
+          "VpcId" : { "Ref" : "VPCJ" },
+          "InternetGatewayId" : { "Ref" : "Igw" }
+        }
+    }, 
+
+    "RouteTb1" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Public-Route"}]    
+        }      
+    },
+
+   "RouteTb2" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Private-Route"}]    
+        }      
+    },
+
+    "RtTableAssociation1" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId" :{"Ref": "sub1"},
+           "RouteTableId":{"Ref" : "RouteTb1" }
+        }    
+    },
+
+    "RtTableAssociation2" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId":{"Ref": "sub2"},
+           "RouteTableId":{"Ref" : "RouteTb2" }
+        }   
+    },
+
+    "PublicRouting" : {
+           "Type" : "AWS::EC2::Route",
+           "Properties" : {
+           "RouteTableId" : {"Ref" : "RouteTb1" },
+           "DestinationCidrBlock" : "0.0.0.0/0",
+           "GatewayId" : {"Ref" : "Igw" }
+        }
+    }
+    
+        }
+    }    
+   
