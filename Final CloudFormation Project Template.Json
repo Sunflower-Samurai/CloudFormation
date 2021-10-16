@@ -1,0 +1,191 @@
+{
+
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : " Julian-Cloudmasters-first-template",
+
+
+    "Parameters" : {
+
+    "VpcName" : {
+          "Type" : "String",
+          "Default" : "enter vpc name",
+          "Description" : "Enter your VPC name"
+        },
+
+    "SubnetName" : {
+           "Type" : "String",
+           "Default" : "subnet-1",
+           "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+           "Description" : "Enter your subnet name"
+        },
+          
+    "SecondarySubnetName" : {
+            "Type" : "String",
+            "Default" : "subnet-2",
+            "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+            "Description" : "Enter your subnet name"
+         },
+
+    "IgwName" : {
+            "Type" : "String",
+            "Default" : "enter gateway name",
+            "Description" : "Enter your internet gateway name"
+         },
+
+    "CidrRange":{
+            "Type": "String",
+            "Default": "10.0.0.0",
+            "AllowedValues":["11.0.0.0","10.0.0.0"],
+            "Description": "Enter VPC Cidr Range to Trigger Mapping Function"
+          },
+
+    "KeyName" : {
+        "Type" : "String",
+        "Default" : "enter Key pair name",
+        "Description" : "Enter your EC2 Key pair name"
+         },
+
+
+        "InstanceType" : {
+            "Type" : "String",
+            "Default" : "t2.micro",
+            "AllowedValues" : [ "t2.nano","t2.micro", 
+                                "t2.small", "t2.medium" ],                   
+            "Description" : "Enter your EC2 instance type"
+        },
+    
+    "ImageId" : {
+           "Type" : "String",
+           "Default" : "ami-0416f96ae3d1a3f29",
+           "AllowedValues" : [ "ami-00d1ab6b335f217cf",
+                               "ami-0416f96ae3d1a3f29" ],                                      
+            "Description" : "Select your Amazon Machine Image"
+        },
+
+    "InstanceName" : {
+            "Type" : "String",
+            "Default" : "enter instance name",
+            "Description" : "Enter your EC2 Instance name"
+        },
+
+    "SecGroupName" : {
+            "Type" : "String",
+            "Default" : "enter security group name",
+            "Description" : "Enter your EC2 Security group name"
+        }
+
+    },     
+
+
+    "Mappings": {
+        "SubCidrRange": {
+            "10.0.0.0" :{
+                "PublicSubnetAZ1":  "10.0.0.0/24",
+                "PrivateSubnetAZ1": "10.0.1.0/24",
+                "PublicSubnetAZ2" : "10.0.2.0/24",
+                "PrivateSubnetAZ2": "10.0.3.0/24"
+            },
+            "11.0.0.0" :{
+                "PublicSubnetAZ1":  "11.0.0.0/24",
+                "PrivateSubnetAZ1": "11.0.1.0/24",
+                "PublicSubnetAZ2" : "11.0.2.0/24",
+                "PrivateSubnetAZ2": "11.0.3.0/24"
+            }
+          
+        }
+    },
+
+
+    "Resources" :{
+
+    "VPCJ" : {
+        "Type" : "AWS::EC2::VPC",    
+        "Properties" :{
+        "CidrBlock" : {
+        "Fn::Join": ["",[ {"Ref": "CidrRange"}, "/16"] ] },
+        "Tags" : [ {"Key": "Name" , "Value": {"Ref" : "VpcName"} } ]
+        }
+    },
+
+    "sub1" : {
+        "Type" : "AWS::EC2::Subnet",   
+        "Properties" :{
+        "VpcId": {"Ref" : "VPCJ"},
+        "CidrBlock" : {
+        "Fn::FindInMap": ["SubCidrRange", {"Ref": "CidrRange"}, "PublicSubnetAZ1"] },
+        "AvailabilityZone" : {"Fn::Select": ["0", {"Fn::GetAZs": {"Ref": "AWS::Region"} } ] },
+        "MapPublicIpOnLaunch" : "True",
+        "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SubnetName"} } ]
+        }
+    },
+
+    "sub2" : {
+         "Type" : "AWS::EC2::Subnet",    
+         "Properties" :{
+         "VpcId" : {"Ref" : "VPCJ"},
+         "CidrBlock" : {
+         "Fn::FindInMap": ["SubCidrRange", {"Ref": "CidrRange"}, "PrivateSubnetAZ1"] },
+         "AvailabilityZone" : {"Fn::Select": ["1", {"Fn::GetAZs": {"Ref": "AWS::Region"} } ] },
+         "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SecondarySubnetName"} } ]
+        }
+    },
+
+    "Igw" :{
+          "Type" : "AWS::EC2::InternetGateway",    
+          "Properties" :{
+            "Tags": [ {"Key": "Name" , "Value": {"Ref" : "IgwName"} } ]
+        }
+    },
+
+    "AttachGateway" : {
+          "Type" : "AWS::EC2::VPCGatewayAttachment",
+          "Properties" : {
+          "VpcId" : { "Ref" : "VPCJ" },
+          "InternetGatewayId" : { "Ref" : "Igw" }
+        }
+    }, 
+
+    "RouteTb1" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Public-Route"}]    
+        }      
+    },
+
+   "RouteTb2" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Private-Route"}]    
+        }      
+    },
+
+    "RtTableAssociation1" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId" :{"Ref": "sub1"},
+           "RouteTableId":{"Ref" : "RouteTb1" }
+        }    
+    },
+
+    "RtTableAssociation2" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId":{"Ref": "sub2"},
+           "RouteTableId":{"Ref" : "RouteTb2" }
+        }   
+    },
+
+    "PublicRouting" : {
+           "Type" : "AWS::EC2::Route",
+           "Properties" : {
+           "RouteTableId" : {"Ref" : "RouteTb1" },
+           "DestinationCidrBlock" : "0.0.0.0/0",
+           "GatewayId" : {"Ref" : "Igw" }
+        }
+    }
+    
+        }
+    }    
+   
