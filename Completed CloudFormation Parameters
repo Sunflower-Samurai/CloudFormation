@@ -1,0 +1,191 @@
+{
+
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : " Julian-Cloudmasters-first-template",
+
+
+    "Parameters" : {
+
+    "VpcName" : {
+          "Type" : "String",
+          "Default" : "enter vpc name",
+          "Description" : "Enter your VPC name"
+        },
+
+    "SubnetName" : {
+           "Type" : "String",
+           "Default" : "subnet-1",
+           "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+           "Description" : "Enter your subnet name"
+        },
+          
+    "SecondarySubnetName" : {
+            "Type" : "String",
+            "Default" : "subnet-2",
+            "AllowedValues" : ["subnet-1", "subnet-2", "subnet-3", "subnet-4"],
+            "Description" : "Enter your subnet name"
+        },
+
+    "IgwName" : {
+            "Type" : "String",
+            "Default" : "enter gateway name",
+            "Description" : "Enter your internet gateway name"
+        },
+
+    "InstanceType" : {
+            "Type" : "String",
+            "Default" : "t2.micro",
+            "AllowedValues" : [ "t2.nano","t2.micro", 
+                                "t2.small", "t2.medium" ],                   
+            "Description" : "Enter your EC2 instance type"
+        },
+    
+    "ImageId" : {
+           "Type" : "String",
+           "Default" : "ami-0416f96ae3d1a3f29",
+           "AllowedValues" : [ "ami-00d1ab6b335f217cf",
+                               "ami-0416f96ae3d1a3f29" ],                                      
+            "Description" : "Select your Amazon Machine Image"
+        },
+
+    "InstanceName" : {
+            "Type" : "String",
+            "Default" : "enter instance name",
+            "Description" : "Enter your EC2 Instance name"
+        },
+
+    "SecGroupName" : {
+            "Type" : "String",
+            "Default" : "enter security group name",
+            "Description" : "Enter your EC2 Security group name"
+        },
+
+    "KeyName" : {
+            "Type" : "String",
+            "Default" : "enter Key pair name",
+            "Description" : "Enter your EC2 Key pair name"
+        }
+    },
+
+
+    "Resources" :{
+
+    "VPCJ" : {
+        "Type" : "AWS::EC2::VPC",    
+        "Properties" : {
+        "CidrBlock" : "10.0.0.0/16",
+        "Tags" : [ {"Key": "Name" , "Value": {"Ref" : "VpcName"} } ]
+        }
+    },
+
+    "sub1" : {
+        "Type" : "AWS::EC2::Subnet",   
+        "Properties" :{
+        "VpcId": {"Ref" : "VPCJ"},
+        "CidrBlock" : "10.0.1.0/24",
+        "AvailabilityZone" : "us-east-1a",
+        "MapPublicIpOnLaunch" : "True",
+        "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SubnetName"} } ]
+        }
+    },
+
+    "sub2" : {
+         "Type" : "AWS::EC2::Subnet",    
+         "Properties" :{
+         "VpcId" : {"Ref" : "VPCJ"},
+         "CidrBlock" : "10.0.2.0/24",
+         "AvailabilityZone" : "us-east-1b",
+         "Tags": [ {"Key": "Name" , "Value": {"Ref" : "SecondarySubnetName"} } ]
+        }
+    },
+
+    "Igw" :{
+          "Type" : "AWS::EC2::InternetGateway",    
+          "Properties" :{
+            "Tags": [ {"Key": "Name" , "Value": {"Ref" : "IgwName"} } ]
+        }
+    },
+
+    "AttachGateway" : {
+          "Type" : "AWS::EC2::VPCGatewayAttachment",
+          "Properties" : {
+          "VpcId" : { "Ref" : "VPCJ" },
+          "InternetGatewayId" : { "Ref" : "Igw" }
+        }
+    }, 
+
+    "RouteTb1" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Public-Route"}]    
+        }      
+    },
+
+   "RouteTb2" : {
+           "Type" :"AWS::EC2::RouteTable",
+           "Properties" : {
+           "VpcId" :{"Ref" :"VPCJ"},
+           "Tags" :[{"Key":"Name" , "Value" :"Private-Route"}]    
+        }      
+    },
+
+    "RtTableAssociation1" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId" :{"Ref": "sub1"},
+           "RouteTableId":{"Ref" : "RouteTb1" }
+        }    
+    },
+
+    "RtTableAssociation2" :{
+           "Type" :"AWS::EC2::SubnetRouteTableAssociation",
+           "Properties":{
+           "SubnetId":{"Ref": "sub2"},
+           "RouteTableId":{"Ref" : "RouteTb2" }
+        }   
+    },
+
+    "PublicRouting" : {
+           "Type" : "AWS::EC2::Route",
+           "Properties" : {
+           "RouteTableId" : {"Ref" : "RouteTb1" },
+           "DestinationCidrBlock" : "0.0.0.0/0",
+           "GatewayId" : {"Ref" : "Igw" }
+        }
+    },
+
+    "Ec2A":{
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+            "ImageId" : {"Ref": "ImageId" },
+            "InstanceType" : {"Ref": "InstanceType"},
+            "KeyName" : {"Ref": "KeyName"},
+            "SecurityGroupIds" : [{"Ref": "EC2SecGroup"}],
+            "SubnetId" : {"Ref": "sub1"},
+            "Tags" : [ {"Key" : "Name", "Value": {"Ref" : "InstanceName" } } ]
+         
+        }
+    },
+
+    "EC2SecGroup":{
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties":{
+            "GroupDescription": "Security Group for EC2",
+            "SecurityGroupEgress": [{
+            "IpProtocol" : "-1",
+            "CidrIp" : "0.0.0.0/0"
+        }],  
+            "SecurityGroupIngress": [{
+            "IpProtocol" : "-1",
+            "CidrIp" : "0.0.0.0/0"
+        }],
+            "Tags": [ {"Key" : "Name", "Value": {"Ref" : "SecGroupName" } } ] ,
+            "VpcId": {"Ref":"VPCJ"}
+
+        }
+      }  
+ 
+    }
+}    
+   
